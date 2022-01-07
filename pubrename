@@ -21,7 +21,9 @@ def set_path():
     
     global path
     
-    path=filedialog.askdirectory()
+    path=filedialog.askdirectory()+"/"
+    
+    ent_directory.insert(0, path)
     
     return path
 
@@ -48,8 +50,13 @@ def open_random_file():
     
     file=random.choice(os.listdir(path))
     
+    ent_file.insert(0, path+file)
+    
     while check_filetype(file) == False:
         random.choice(os.listdir(path))
+        ent_file.insert(0, path+file)
+        
+    ent_file.insert(0, path+file)
         
     handle_file(file)
         
@@ -127,10 +134,10 @@ def submit(file):
     
     new_file_name = ent_newfilename.get()
     
-    if os.path.isdir(path+"renamed") == False:
-        os.mkdir(path+"renamed")
+    if os.path.isdir(path+"/renamed") == False:
+        os.mkdir(path+"/renamed")
     
-    os.rename(file, path+"renamed/"+new_file_name)
+    os.rename(file, path+"/renamed/"+new_file_name)
     
 
 window = tk.Tk()
@@ -206,12 +213,15 @@ btn_randomfile = tk.Button(master=window, text="Öffne zufällige Datei", comman
 btn_randomfile.pack()
 #btn_submit.grid(row=5,column=1)
 
+ent_file = tk.Entry(master=window, width=120)
+ent_file.pack()
+
 btn_chosedirectory = tk.Button(master=window, text="Bestimme Pfad für zufällige Datei", command=set_path)
 btn_chosedirectory.pack()
 #btn_submit.grid(row=5,column=1)
 
-lbl_directory = tk.Label(master=window, textvariable = path)
-lbl_directory.pack()
+ent_directory = tk.Entry(master=window, width=120)
+ent_directory.pack()
 
 btn_openfile = tk.Button(master=window, text="Öffne bestimmte Datei", command=open_file)
 btn_openfile.pack()
