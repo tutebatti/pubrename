@@ -56,7 +56,7 @@ def check_filetype(file):
     """
     Check if file is pdf; returns boolean
     
-    2do: Check if file is pdf, djvu, or epub; returns boolean
+    2do: Check if file is pdf, djvu, or epub; return boolean
 
     """
     accepted_filetypes = [".pdf"]#, ".djvu", ".djv", ".epub"]
@@ -69,16 +69,15 @@ def check_filetype(file):
     
 def open_random_file():
     
-    os.system("pkill evince")
-    
     global file
     
-    file=path+random.choice(os.listdir(path))
+    file = path + random.choice(os.listdir(path))
     
     ent_file.setText(file)
     
     while check_filetype(file) == False:
-        file=path+random.choice(os.listdir(path))
+        file = path + random.choice(os.listdir(path))
+        
         ent_file.setText(file)
         
     handle_file(file)
@@ -86,8 +85,6 @@ def open_random_file():
     return file
 
 def open_file():
-    
-    os.system("pkill evince")
     
     global file
     
@@ -170,6 +167,8 @@ def submit_and_randomfile(file):
     clear_fields()
     
     open_random_file()
+
+### Set up window
 
 app = QApplication(sys.argv)
 
