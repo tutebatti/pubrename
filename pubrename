@@ -6,23 +6,36 @@ Created on Thu Jul  1 18:24:03 2021
 @author: florian
 """
 
+# needed for delay when opening evince
 import time
-import os
-import random
+
+# needed to start evince
 import subprocess
+
+# needed for operations concerning files and folders
+import os
+
+# needed to choose random file
+import random
+
+# needed for gui
 import tkinter as tk
 import tkinter.font as tkFont
 from tkinter import filedialog
+
+# needed for normalizing filename
 import unidecode
 
-path = "."
+# default path to operate in
+path = "./"
 
 def set_path():
     
     global path
     
-    path=filedialog.askdirectory()+"/"
+    path = filedialog.askdirectory()+"/"
     
+    #ent_directory.delete(0,)
     ent_directory.insert(0, path)
     
     return path
@@ -48,15 +61,13 @@ def open_random_file():
     
     global file
     
-    file=random.choice(os.listdir(path))
+    file=path+random.choice(os.listdir(path))
     
-    ent_file.insert(0, path+file)
+    ent_file.insert(0, file)
     
     while check_filetype(file) == False:
-        random.choice(os.listdir(path))
-        ent_file.insert(0, path+file)
-        
-    ent_file.insert(0, path+file)
+        file=path+random.choice(os.listdir(path))
+        ent_file.insert(0, file)
         
     handle_file(file)
         
