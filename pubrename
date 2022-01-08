@@ -18,10 +18,12 @@ import os
 # needed to choose random file
 import random
 
-# needed for gui
-import tkinter as tk
-import tkinter.font as tkFont
-from tkinter import filedialog
+# needed for handling of pyqt
+import sys
+
+# needed for pyqt
+
+from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QLineEdit, QPushButton, QGridLayout, QFileDialog
 
 # needed for normalizing filename
 import unidecode
@@ -33,10 +35,9 @@ def set_path():
     
     global path
     
-    path = filedialog.askdirectory()+"/"
-    
-    #ent_directory.delete(0,)
-    ent_directory.insert(0, path)
+    path = QFileDialog.getExistingDirectory()+"/"
+
+    ent_directory.setText(path)
     
     return path
 
@@ -63,11 +64,11 @@ def open_random_file():
     
     file=path+random.choice(os.listdir(path))
     
-    ent_file.insert(0, file)
+    ent_file.setText(file)
     
     while check_filetype(file) == False:
         file=path+random.choice(os.listdir(path))
-        ent_file.insert(0, file)
+        ent_file.setText(file)
         
     handle_file(file)
         
@@ -79,10 +80,10 @@ def open_file():
     
     global file
     
-    file=filedialog.askopenfilename()
+    file = QFileDialog.getOpenFileName()
     
     while check_filetype(file) == False:
-        file=filedialog.askopenfilename()
+        file = QFileDialog.getOpenFileName()
         
     handle_file(file)
         
@@ -90,8 +91,8 @@ def open_file():
 
 def handle_file(file):
     
-    ent_newfilename.delete(0, tk.END)
-    ent_oldfilename.delete(0, tk.END)
+    ent_newfilename.clear()
+    ent_oldfilename.clear()
     
     subprocess.Popen(["evince", file])
     time.sleep(0.75)
@@ -105,23 +106,23 @@ def handle_file(file):
     
     old_file_name, file_extension = os.path.splitext(file)
     
-    ent_oldfilename.insert(0, old_file_name)
+    ent_oldfilename.setText(old_file_name)
 
 def preview():
-    author = ent_author.get()
+    author = ent_author.text()
     author = author + "_"
 
-    year = ent_year.get()
+    year = ent_year.text()
     year = year + "_"
     
-    title = ent_title.get()
+    title = ent_title.text()
     
-    subtitle = ent_subtitle.get()
+    subtitle = ent_subtitle.text()
 
     if not subtitle == "":
         subtitle = "_" + subtitle
 
-    additions = ent_additions.get()
+    additions = ent_additions.text()
     
     if not additions == "":
         additions = "_" + additions
@@ -138,104 +139,111 @@ def preview():
     new_file_name=new_file_name.casefold()
     new_file_name=unidecode.unidecode(new_file_name)
     
-    ent_newfilename.insert(0, new_file_name)
+    ent_newfilename.setText(new_file_name)
     
 
 def submit(file):
     
-    new_file_name = ent_newfilename.get()
+    new_file_name = ent_newfilename.text()
     
     if os.path.isdir(path+"/renamed") == False:
         os.mkdir(path+"/renamed")
     
     os.rename(file, path+"/renamed/"+new_file_name)
-    
 
-window = tk.Tk()
-window.title("Pubrename")
+app = QApplication(sys.argv)
 
-default_font = tk.font.nametofont("TkDefaultFont")
-default_font.configure(family="Linux Libertine", size=13)
+window = QWidget()
+window.setWindowTitle("Pubrename")
+window.setGeometry(200, 100, 800, 400)
+window.move(200, 100)
 
-#window.rowconfigure([0,1,2,3,4,5,6,7,8,9], minsize=50, weight=1)
-#window.columnconfigure([0,1], minsize=50, weight=1)
+### Elements
 
-lbl_oldfilename = tk.Label(master=window, text="Alter Dateiname: ")
-lbl_oldfilename.pack()
+lbl_oldfilename = QLabel("Alter Dateiname: ", parent=window)
+ent_oldfilename = QLineEdit(parent=window)
 
-ent_oldfilename = tk.Entry(master=window, width=120)#, state='disable')
-ent_oldfilename.pack()
+lbl_author = QLabel("Autor: ", parent=window)
+ent_author = QLineEdit(parent=window)
 
-lbl_author = tk.Label(master=window, text="Autor/Hrsg:")
-lbl_author.pack()
-#lbl_author.grid(row=0,column=0)
+lbl_year = QLabel("Jahr: ", parent=window)
+ent_year = QLineEdit(parent=window)
 
-ent_author = tk.Entry(master=window, width=120)
-ent_author.pack()
-#ent_author.grid(row=0,column=1)
+lbl_title = QLabel("Titel: ", parent=window)
+ent_title = QLineEdit(parent=window)
 
-lbl_year = tk.Label(master=window, text="Jahr:")
-lbl_year.pack()
-#lbl_year.grid(row=1,column=0)
+lbl_subtitle = QLabel("Untertitel (optional): ", parent=window)
+ent_subtitle = QLineEdit(parent=window)
 
-ent_year = tk.Entry(master=window, width=120)
-ent_year.pack()
-#ent_year.grid(row=1,column=1)
+lbl_additions = QLabel("Zusatz (optional): ", parent=window)
+ent_additions = QLineEdit(parent=window)
 
-lbl_title = tk.Label(master=window, text="Titel:")
-lbl_title.pack()
-#lbl_title.grid(row=2,column=0)
+btn_preview = QPushButton("Vorschau")
+btn_preview.clicked.connect(preview)
 
-ent_title = tk.Entry(master=window, width=120)
-ent_title.pack()
-#ent_title.grid(row=2,column=1)
+lbl_newfilename = QLabel("Neuer Dateiname: ", parent=window)
+ent_newfilename = QLineEdit(parent=window)
 
-lbl_subtitle = tk.Label(master=window, text="Untertitel (optional):")
-lbl_subtitle.pack()
-#lbl_subtitle.grid(row=3,column=0)
+btn_submit = QPushButton("Übernehmen")
+btn_submit.clicked.connect(lambda: submit(file))
 
-ent_subtitle = tk.Entry(master=window, width=120)
-ent_subtitle.pack()
-#ent_subtitle.grid(row=3,column=1)
+btn_chosedirectory = QPushButton("Verzeichnis wählen")
+btn_chosedirectory.clicked.connect(set_path)
 
-lbl_additions = tk.Label(master=window, text="Zusätze (optional):")
-lbl_additions.pack()
-#lbl_additions.grid(row=4,column=0)
+btn_randomfile = QPushButton("Öffne zufällige Datei")
+btn_randomfile.clicked.connect(open_random_file)
 
-ent_additions = tk.Entry(master=window, width=120)
-ent_additions.pack()
-#ent_additions.grid(row=4,column=1)
+btn_openfile = QPushButton("Öffne bestimmte Datei")
+btn_openfile.clicked.connect(open_file)
 
-btn_preview = tk.Button(master=window, text="Vorschau", command=preview)
-btn_preview.pack()
-#btn_submit.grid(row=5,column=1)
+lbl_directory = QLabel("Aktueller Pfad: ", parent=window)
+ent_directory = QLineEdit(parent=window)
 
-lbl_newfilename = tk.Label(master=window, text="Neuer Dateiname:")
-lbl_newfilename.pack()
+lbl_file = QLabel("Aktuelle Datei: ", parent=window)
+ent_file = QLineEdit(parent=window)
 
-ent_newfilename = tk.Entry(master=window, width=120)#, state='disable')
-ent_newfilename.pack()
 
-btn_submit = tk.Button(master=window, text="Übernehmen", command=lambda: submit(file))
-btn_submit.pack()
-#btn_submit.grid(row=5,column=1)
+### Layout
 
-btn_randomfile = tk.Button(master=window, text="Öffne zufällige Datei", command=open_random_file)
-btn_randomfile.pack()
-#btn_submit.grid(row=5,column=1)
+layout = QGridLayout()
 
-ent_file = tk.Entry(master=window, width=120)
-ent_file.pack()
+layout.addWidget(lbl_oldfilename, 0, 0)
+layout.addWidget(ent_oldfilename, 0, 1, 1, 2)
 
-btn_chosedirectory = tk.Button(master=window, text="Bestimme Pfad für zufällige Datei", command=set_path)
-btn_chosedirectory.pack()
-#btn_submit.grid(row=5,column=1)
+layout.addWidget(lbl_author, 1, 0)
+layout.addWidget(ent_author, 1, 1, 1, 2)
 
-ent_directory = tk.Entry(master=window, width=120)
-ent_directory.pack()
+layout.addWidget(lbl_year, 2, 0)
+layout.addWidget(ent_year, 2, 1, 1, 2)
 
-btn_openfile = tk.Button(master=window, text="Öffne bestimmte Datei", command=open_file)
-btn_openfile.pack()
-#btn_submit.grid(row=5,column=1)
+layout.addWidget(lbl_title, 3, 0)
+layout.addWidget(ent_title, 3, 1, 1, 2)
 
-window.mainloop()
+layout.addWidget(lbl_subtitle, 4, 0)
+layout.addWidget(ent_subtitle, 4, 1, 1, 2)
+
+layout.addWidget(lbl_additions, 5, 0)
+layout.addWidget(ent_additions, 5, 1, 1, 2)
+
+layout.addWidget(btn_preview, 6, 1)
+layout.addWidget(btn_submit, 6, 2)
+
+layout.addWidget(lbl_newfilename, 7, 0)
+layout.addWidget(ent_newfilename, 7, 1, 1, 2)
+
+layout.addWidget(btn_chosedirectory, 8, 1)
+layout.addWidget(btn_randomfile, 8, 2)
+layout.addWidget(btn_openfile, 9, 2)
+
+layout.addWidget(lbl_directory, 10, 0)
+layout.addWidget(ent_directory, 10, 1, 1, 2)
+
+layout.addWidget(lbl_file, 11, 0)
+layout.addWidget(ent_file, 11, 1, 1, 2)
+
+
+window.setLayout(layout)
+
+window.show()
+
+sys.exit(app.exec_())
