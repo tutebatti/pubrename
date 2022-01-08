@@ -31,6 +31,17 @@ import unidecode
 # default path to operate in
 path = "./"
 
+def clear_fields():
+    
+    ent_oldfilename.clear()
+    ent_author.clear()
+    ent_year.clear()
+    ent_title.clear()
+    ent_subtitle.clear()
+    ent_additions.clear()
+    ent_newfilename.clear()
+    ent_file.clear()
+
 def set_path():
     
     global path
@@ -80,19 +91,13 @@ def open_file():
     
     global file
     
-    file = QFileDialog.getOpenFileName()
+    file = QFileDialog.getOpenFileName()[0]
     
-    while check_filetype(file) == False:
-        file = QFileDialog.getOpenFileName()
-        
     handle_file(file)
         
     return file
 
 def handle_file(file):
-    
-    ent_newfilename.clear()
-    ent_oldfilename.clear()
     
     subprocess.Popen(["evince", file])
     time.sleep(0.75)
@@ -150,6 +155,21 @@ def submit(file):
         os.mkdir(path+"/renamed")
     
     os.rename(file, path+"/renamed/"+new_file_name)
+    
+    clear_fields()
+    
+def submit_and_randomfile(file):
+    
+    new_file_name = ent_newfilename.text()
+    
+    if os.path.isdir(path+"/renamed") == False:
+        os.mkdir(path+"/renamed")
+    
+    os.rename(file, path+"/renamed/"+new_file_name)#
+    
+    clear_fields()
+    
+    open_random_file()
 
 app = QApplication(sys.argv)
 
@@ -186,6 +206,9 @@ ent_newfilename = QLineEdit(parent=window)
 
 btn_submit = QPushButton("Übernehmen")
 btn_submit.clicked.connect(lambda: submit(file))
+
+btn_submit_and_randomfile = QPushButton("Übernehmen und neue Datei")
+btn_submit_and_randomfile.clicked.connect(lambda: submit_and_randomfile(file))
 
 btn_chosedirectory = QPushButton("Verzeichnis wählen")
 btn_chosedirectory.clicked.connect(set_path)
@@ -228,18 +251,20 @@ layout.addWidget(ent_additions, 5, 1, 1, 2)
 layout.addWidget(btn_preview, 6, 1)
 layout.addWidget(btn_submit, 6, 2)
 
-layout.addWidget(lbl_newfilename, 7, 0)
-layout.addWidget(ent_newfilename, 7, 1, 1, 2)
+layout.addWidget(btn_submit_and_randomfile, 7, 2)
 
-layout.addWidget(btn_chosedirectory, 8, 1)
-layout.addWidget(btn_randomfile, 8, 2)
-layout.addWidget(btn_openfile, 9, 2)
+layout.addWidget(lbl_newfilename, 8, 0)
+layout.addWidget(ent_newfilename, 8, 1, 1, 2)
 
-layout.addWidget(lbl_directory, 10, 0)
-layout.addWidget(ent_directory, 10, 1, 1, 2)
+layout.addWidget(btn_chosedirectory, 9, 1)
+layout.addWidget(btn_randomfile, 9, 2)
+layout.addWidget(btn_openfile, 10, 2)
 
-layout.addWidget(lbl_file, 11, 0)
-layout.addWidget(ent_file, 11, 1, 1, 2)
+layout.addWidget(lbl_directory, 11, 0)
+layout.addWidget(ent_directory, 11, 1, 1, 2)
+
+layout.addWidget(lbl_file, 12, 0)
+layout.addWidget(ent_file, 12, 1, 1, 2)
 
 
 window.setLayout(layout)
