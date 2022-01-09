@@ -31,65 +31,68 @@ import unidecode
 # __author__ = "Florian Jäckel"
 
 class pubrename(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self):
+        super().__init__()
         
         self.setWindowTitle("Pubrename")
         self.setGeometry(200, 100, 800, 400)
         self.move(200, 100)
-        self.layout = None
         
         # default directory to operate in
         self.directory = "./"
+        
         # variables for handling of file
         self.file = ""
         self.oldFileName = ""
         self.fileExtension = ""
         self.newFileName = ""
         
-        self._createWidgets()
-        self._setLayout()
+        self.generalLayout = QGridLayout()
+        
+        self.createWidgets()
         
         self.show()
 
-    def _createWidgets(self):
+    def createWidgets(self):
         
-        self._createFileWidgets()
-        self._createBibWidgets()
-        self._createButtons()
+        self.createFileWidgets()
+        self.createBibWidgets()
+        self.createButtons()
         
-    def _createFileWidgets(self):
-
-        self.lbl_oldfilename = QLabel("Alter Dateiname: ", parent=self)
-        self.ent_oldfilename = QLineEdit(parent=self)
+        self.setLayout()
         
-        self.lbl_newfilename = QLabel("Neuer Dateiname: ", parent=self)
-        self.ent_newfilename = QLineEdit(parent=self)
+    def createFileWidgets(self):
+
+        self.lbl_oldfilename = QLabel("Alter Dateiname: ")
+        self.ent_oldfilename = QLineEdit()
         
-        self.lbl_directory = QLabel("Aktueller Pfad: ", parent=self)
-        self.ent_directory = QLineEdit(parent=self)
+        self.lbl_newfilename = QLabel("Neuer Dateiname: ")
+        self.ent_newfilename = QLineEdit()
+        
+        self.lbl_directory = QLabel("Aktueller Pfad: ")
+        self.ent_directory = QLineEdit()
 
-        self.lbl_file = QLabel("Aktuelle Datei: ", parent=self)
-        self.ent_file = QLineEdit(parent=self)
+        self.lbl_file = QLabel("Aktuelle Datei: ")
+        self.ent_file = QLineEdit()
 
-    def _createBibWidgets(self):        
+    def createBibWidgets(self):        
 
-        self.lbl_author = QLabel("Autor: ", parent=self)
-        self.ent_author = QLineEdit(parent=self)
+        self.lbl_author = QLabel("Autor: ")
+        self.ent_author = QLineEdit()
 
-        self.lbl_year = QLabel("Jahr: ", parent=self)
-        self.ent_year = QLineEdit(parent=self)
+        self.lbl_year = QLabel("Jahr: ")
+        self.ent_year = QLineEdit()
 
-        self.lbl_title = QLabel("Titel: ", parent=self)
-        self.ent_title = QLineEdit(parent=self)
+        self.lbl_title = QLabel("Titel: ")
+        self.ent_title = QLineEdit()
 
-        self.lbl_subtitle = QLabel("Untertitel (optional): ", parent=self)
-        self.ent_subtitle = QLineEdit(parent=self)
+        self.lbl_subtitle = QLabel("Untertitel (optional): ")
+        self.ent_subtitle = QLineEdit()
 
-        self.lbl_additions = QLabel("Zusatz (optional): ", parent=self)
-        self.ent_additions = QLineEdit(parent=self)
+        self.lbl_additions = QLabel("Zusatz (optional): ")
+        self.ent_additions = QLineEdit()
 
-    def _createButtons(self):
+    def createButtons(self):
 
         self.btn_preview = QPushButton("Vorschau")
         self.btn_preview.clicked.connect(self.preview)
@@ -109,45 +112,43 @@ class pubrename(QWidget):
         self.btn_openfile = QPushButton("Öffne bestimmte Datei")
         self.btn_openfile.clicked.connect(self.open_file)        
         
-    def _setLayout(self):
+    def setLayout(self):
+                
+        self.generalLayout.addWidget(self.lbl_oldfilename, 0, 0)
+        self.generalLayout.addWidget(self.ent_oldfilename, 0, 1, 1, 2)
         
-        self.layout = QGridLayout()
+        self.generalLayout.addWidget(self.lbl_author, 1, 0)
+        self.generalLayout.addWidget(self.ent_author, 1, 1, 1, 2)
         
-        self.layout.addWidget(self.lbl_oldfilename, 0, 0)
-        self.layout.addWidget(self.ent_oldfilename, 0, 1, 1, 2)
+        self.generalLayout.addWidget(self.lbl_year, 2, 0)
+        self.generalLayout.addWidget(self.ent_year, 2, 1, 1, 2)
         
-        self.layout.addWidget(self.lbl_author, 1, 0)
-        self.layout.addWidget(self.ent_author, 1, 1, 1, 2)
+        self.generalLayout.addWidget(self.lbl_title, 3, 0)
+        self.generalLayout.addWidget(self.ent_title, 3, 1, 1, 2)
         
-        self.layout.addWidget(self.lbl_year, 2, 0)
-        self.layout.addWidget(self.ent_year, 2, 1, 1, 2)
+        self.generalLayout.addWidget(self.lbl_subtitle, 4, 0)
+        self.generalLayout.addWidget(self.ent_subtitle, 4, 1, 1, 2)
         
-        self.layout.addWidget(self.lbl_title, 3, 0)
-        self.layout.addWidget(self.ent_title, 3, 1, 1, 2)
+        self.generalLayout.addWidget(self.lbl_additions, 5, 0)
+        self.generalLayout.addWidget(self.ent_additions, 5, 1, 1, 2)
         
-        self.layout.addWidget(self.lbl_subtitle, 4, 0)
-        self.layout.addWidget(self.ent_subtitle, 4, 1, 1, 2)
+        self.generalLayout.addWidget(self.btn_preview, 6, 1)
+        self.generalLayout.addWidget(self.btn_submit, 6, 2)
         
-        self.layout.addWidget(self.lbl_additions, 5, 0)
-        self.layout.addWidget(self.ent_additions, 5, 1, 1, 2)
+        self.generalLayout.addWidget(self.btn_submit_and_randomfile, 7, 2)
         
-        self.layout.addWidget(self.btn_preview, 6, 1)
-        self.layout.addWidget(self.btn_submit, 6, 2)
+        self.generalLayout.addWidget(self.lbl_newfilename, 8, 0)
+        self.generalLayout.addWidget(self.ent_newfilename, 8, 1, 1, 2)
         
-        self.layout.addWidget(self.btn_submit_and_randomfile, 7, 2)
+        self.generalLayout.addWidget(self.btn_chosedirectory, 9, 1)
+        self.generalLayout.addWidget(self.btn_randomfile, 9, 2)
+        self.generalLayout.addWidget(self.btn_openfile, 10, 2)
         
-        self.layout.addWidget(self.lbl_newfilename, 8, 0)
-        self.layout.addWidget(self.ent_newfilename, 8, 1, 1, 2)
+        self.generalLayout.addWidget(self.lbl_directory, 11, 0)
+        self.generalLayout.addWidget(self.ent_directory, 11, 1, 1, 2)
         
-        self.layout.addWidget(self.btn_chosedirectory, 9, 1)
-        self.layout.addWidget(self.btn_randomfile, 9, 2)
-        self.layout.addWidget(self.btn_openfile, 10, 2)
-        
-        self.layout.addWidget(self.lbl_directory, 11, 0)
-        self.layout.addWidget(self.ent_directory, 11, 1, 1, 2)
-        
-        self.layout.addWidget(self.lbl_file, 12, 0)
-        self.layout.addWidget(self.ent_file, 12, 1, 1, 2)
+        self.generalLayout.addWidget(self.lbl_file, 12, 0)
+        self.generalLayout.addWidget(self.ent_file, 12, 1, 1, 2)
         
     
     def clear_fields(self):
