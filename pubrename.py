@@ -12,7 +12,15 @@ Created on Thu Jul  1 18:24:03 2021
 #         - when opening concrete file and is not pdf
 #         - handling for files other than pdf
 #     - oo to the max: gui-elements as objects
+#     - check for bugs...
 #     - improve normalizing of filenames
+
+# -*- coding: utf-8 -*-
+"""
+Spyder Editor
+
+This is a temporary script file.
+"""
 
 # needed for delay when opening evince
 import time
@@ -25,7 +33,7 @@ import random
 # needed for handling of pyqt
 import sys
 # needed for pyqt
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QFileDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, QGroupBox, QFileDialog, QStatusBar, QMenu, QAction, QMessageBox
 # needed for normalizing filename
 import unidecode
 
@@ -46,7 +54,7 @@ class Pubrename(QMainWindow):
         
         # default directory to operate in
         # 2do: implement warning
-        self.directory = "./"
+        self.directory = ""
         
         # variables for handling of file
         self.file = ""
@@ -54,142 +62,122 @@ class Pubrename(QMainWindow):
         self.oldFilename = ""
         self.newFilename = ""
         
-        self._createWidgets()
+        self._createMenuBar()
+        self._createStatusBar()
+        self._createBoxes()
+        
+    def _createMenuBar(self):
+        
+        menuBar = self.menuBar()
+        self.setMenuBar(menuBar)
+        
+        fileMenu = QMenu("&Datei", self)
+        menuBar.addMenu(fileMenu)
+        
+        choseFile = QAction("Öffne Datei", self)
+        choseFile.triggered.connect(self._choseFile)
+        fileMenu.addAction(choseFile)
+        
+        choseDirectory = QAction("Öffne Verzeichnis", self)
+        choseDirectory.triggered.connect(self._setDirectory)
+        fileMenu.addAction(choseDirectory)
+        
+        closeProgram = QAction("&Schließen", self)
+        closeProgram.triggered.connect(self.close)
+        fileMenu.addAction(closeProgram)
+        
+        aboutMenu = QAction("&Über", self)
+        menuBar.addAction(aboutMenu)
+        aboutMenu.triggered.connect(self._showAbout)
+        
+    def _showAbout(self):
+        
+        about = QMessageBox()
+        about.setWindowTitle("Über Pubrename")
+        about.setText("Dummy-Text")
+        about.exec_()
     
-    def closeEvent(self, event):
+    def _createStatusBar(self):
+        statusBar = QStatusBar()
+        self.setStatusBar(statusBar)
+        self.statusBarLabel = QLabel()
+        statusBar.addWidget(self.statusBarLabel)
         
-        self._closeEvince()
+    def _createBoxes(self):
         
-    def _createWidgets(self):
+        self._createFormBoxes()
+        self._createButtonBoxes()
         
-        self._createFileWidgets()
-        self._createFilenameWidgets()
-        self._createBibWidgets()
-        self._createButtons()
-        self._createFileButtons()
+    def _createButtonBoxes(self):
         
-    def _createFileWidgets(self):
-
-        self.fileWidgets = {}
-        fileWidgetsLayout = QGridLayout()
-        row = 0
-        
-        fileWidgets ={"currentDirectory": "Aktueller Pfad",
-                      "currentFile": "Aktuelle Datei",
+        self.filenameButtons = {"preview": ["&Vorschau", self._preview, (0,0)],
+                      "normalizeOldFilename": ["&Alten Dateinamen normalisieren", self._normalizeOldFilename, (1,0)],
                       }
         
-        for fileWidget, description in fileWidgets.items():
-            self.fileWidgets[fileWidget] = [QLabel(description + ": "), QLineEdit()]
-            fileWidgetsLayout.addWidget(self.fileWidgets[fileWidget][0], row, 0)
-            fileWidgetsLayout.addWidget(self.fileWidgets[fileWidget][1], row, 1)
-            row += 1
-        
-        self.generalLayout.addLayout(fileWidgetsLayout, 7, 0)
-        
-    def _createFilenameWidgets(self):
-
-        self.filenameWidgets = {}
-        filenameWidgetsLayout = QGridLayout()
-        row = 0
-        
-        filenameWidgets ={"oldFilename": "Alter Dateiname",
-                      "newFilename": "Neuer Dateiname",
+        self.fileButtons = {
+                      "submit" : ["&Übernehmen", self._submit, (0,0)],
+                      "submitAndOpenRandomFile" : ["Übernehmen und &nächste zufällige Datei", self._submitAndOpenRandomFile, (1,0)],
+                      "openRandomFile" : ["Nächste zufällige Datei", self._openRandomFile, (0,1)],
+                      "moveTo2edit": ["Verschiebe Datei nach &2edit", self._moveTo2edit, (1,1)],
                       }
-           
-        for filenameWidget, description in filenameWidgets.items():
-            self.filenameWidgets[filenameWidget] = [QLabel(description + ": "), QLineEdit()]
-            filenameWidgetsLayout.addWidget(self.filenameWidgets[filenameWidget][0], row, 0)
-            filenameWidgetsLayout.addWidget(self.filenameWidgets[filenameWidget][1], row, 1)
-            row += 1
         
-        self.generalLayout.addLayout(filenameWidgetsLayout, 0, 0)        
-                      
-    def _createBibWidgets(self):        
+        self.filenameButtonBox = buttonBox(self.filenameButtons)
+        self.fileButtonBox = buttonBox(self.fileButtons)
 
-        self.bibWidgets = {}
-        bibWidgetsLayout = QGridLayout()
-        row=0
+        self.generalLayout.addLayout(self.filenameButtonBox.layout, 1, 0)        
+        self.generalLayout.addLayout(self.fileButtonBox.layout, 3, 0)        
         
-        bibWidgets = {"author": "Autor",
+    def _createFormBoxes(self):
+              
+        self.bibWidgets = {"author": "Autor",
                       "year" : "Jahr",
                       "title" : "Titel",
                       "subtitle": "Untertitel (optional)",
-                      "addition": "Zusatz (optional)"
+                      "addition": "Zusatz (optional)",
                       }
         
-        for bibWidget, description in bibWidgets.items():
-            self.bibWidgets[bibWidget] = [QLabel(description + ": "), QLineEdit()]
-            bibWidgetsLayout.addWidget(self.bibWidgets[bibWidget][0], row, 0)
-            bibWidgetsLayout.addWidget(self.bibWidgets[bibWidget][1], row, 1)
-            row += 1
-        
-        self.generalLayout.addLayout(bibWidgetsLayout, 2, 0)
-
-    def _createButtons(self):
-        
-        self.buttons = {}
-        buttonsLayout = QGridLayout()
-        
-        buttons = {"preview": ["&Vorschau", self._preview, (0,0)],
-                      "submit" : ["&Übernehmen", self._submit, (0,1)],
-                      "submitAndOpenRandomFile" : ["Übernehmen und &nächste zufällige Datei", self._submitAndOpenRandomFile, (1,1)],
-                      "normalizeOldFilename": ["&Alten Dateinamen normalisieren", self._normalizeOldFilename, (2,1)]}
-        
-        for button, attributes in buttons.items():
-            self.buttons[button] = QPushButton(attributes[0])
-            self.buttons[button].clicked.connect(attributes[1])
-            buttonsLayout.addWidget(self.buttons[button], attributes[2][0], attributes[2][1])
-        
-        self.generalLayout.addLayout(buttonsLayout, 1, 0)
-        
-    def _createFileButtons(self):
-        
-        self.fileButtons = {}
-        fileButtonsLayout = QGridLayout()
-        
-        fileButtons = {"choseDirectory" : ["Verzeichnis wählen", self._setPath, (0,0)],
-                      "openRandomFile": ["Öffne &zufällige Datei", self._openRandomFile, (0,1)],
-                      "openFile": ["Öffne bestimmte Datei", self._openFile, (1,1)],
-                      "moveTo2edit": ["Verschiebe Datei nach &2edit", self._moveTo2edit, (2,1)],
+        self.filenameWidgets = {"oldFilename": "Alter Dateiname",
+                      "newFilename" : "Neuer Dateiname",
                       }
         
-        for fileButton, attributes in fileButtons.items():
-            self.fileButtons[fileButton] = QPushButton(attributes[0])
-            self.fileButtons[fileButton].clicked.connect(attributes[1])
-            fileButtonsLayout.addWidget(self.fileButtons[fileButton], attributes[2][0], attributes[2][1])
+        self.bibBox = formBox("Bibliographische Angaben", self.bibWidgets)
+        self.filenameBox = formBox("Dateinamen", self.filenameWidgets)
+                
+        self.generalLayout.addLayout(self.bibBox.layout, 0, 0)
+        self.generalLayout.addLayout(self.filenameBox.layout, 2, 0)
         
-        self.generalLayout.addLayout(fileButtonsLayout, 6, 0)
-  
-    def _clearFields(self):
+    def closeEvent(self, event):
+            
+        self._closeEvince()
         
-        self._clearFilenameFields()
-        self._clearBibFields()
-  
-    def _clearFilenameFields(self):
+    def _clearAllFields(self):
+        
+        self.bibBox.clearFields()
+        self.filenameBox.clearFields()
     
-        for widget, elements in self.filenameWidgets.items():
-            elements[1].clear()
-  
-    def _clearBibFields(self):
-        
-        for widget, elements in self.bibWidgets.items():
-            elements[1].clear()
-    
-    def _setPath(self):
+    def _setDirectory(self):
         
         self.directory = QFileDialog.getExistingDirectory()+"/"
-    
-        self.fileWidgets["currentDirectory"][1].setText(self.directory)
+        
+        self.statusBarLabel.setText("Aktuelles Verzeichnis: " + self.directory)
     
     def _checkFiletype(self):
         acceptedFiletypes = [".pdf"]
-        self.fileName, self.fileExtension = os.path.splitext(self.file)
+        self.filename, self.fileExtension = os.path.splitext(self.file)
         
         if (self.fileExtension in acceptedFiletypes):
             return True
         else:
             return False
         
+    def _choseFile(self):
+        
+        self.file = QFileDialog.getOpenFileName()[0]
+        
+        self.statusBarLabel.setText("Aktuelle Datei: " + self.file)
+        
+        self._openFile()
+    
     def _openRandomFile(self):
         
         self.file = self.directory + random.choice(os.listdir(self.directory))
@@ -197,21 +185,13 @@ class Pubrename(QMainWindow):
         while self._checkFiletype() == False:
             self.file = self.directory + random.choice(os.listdir(self.directory))
         
-        self.oldFilename = os.path.basename(self.file)
-            
-        self.fileWidgets["currentFile"][1].setText(self.file)
-        self.filenameWidgets["oldFilename"][1].setText(self.oldFilename)
-            
-        self._openEvince()
+        self._openFile()
     
     def _openFile(self):
         
-        self.file = QFileDialog.getOpenFileName()[0]
-        
         self.oldFilename = os.path.basename(self.file)
-            
-        self.fileWidgets["currentFile"][1].setText(self.file)
-        self.filenameWidgets["oldFilename"][1].setText(self.oldFilename)
+        
+        self.filenameBox.formList["oldFilename"][1].setText(self.oldFilename)
         
         self._openEvince()
     
@@ -232,20 +212,20 @@ class Pubrename(QMainWindow):
         self.evincePreview.terminate()
     
     def _preview(self):
-        author = self.bibWidgets["author"][1].text()
+        author = self.bibBox.formList["author"][1].text()
         author = author + "_"
     
-        year = self.bibWidgets["year"][1].text()
+        year = self.bibBox.formList["year"][1].text()
         year = year + "_"
         
-        title = self.bibWidgets["title"][1].text()
+        title = self.bibBox.formList["title"][1].text()
         
-        subtitle = self.bibWidgets["subtitle"][1].text()
+        subtitle = self.bibBox.formList["subtitle"][1].text()
     
         if not subtitle == "":
             subtitle = "_" + subtitle
     
-        addition = self.bibWidgets["addition"][1].text()
+        addition = self.bibBox.formList["addition"][1].text()
         
         if not addition == "":
             addition = "_" + addition
@@ -254,7 +234,7 @@ class Pubrename(QMainWindow):
     
         self.normalizeFilename()
         
-        self.filenameWidgets["newFilename"][1].setText(self.newFilename)
+        self.filenameBox.formList["newFilename"][1].setText(self.newFilename)
         
     def _normalizeOldFilename(self):
         
@@ -262,9 +242,19 @@ class Pubrename(QMainWindow):
         
         self.normalizeFilename()
         
-        self.filenameWidgets["newFilename"][1].setText(self.newFilename)
+        self.filenameBox.formList["newFilename"][1].setText(self.newFilename)
     
     def normalizeFilename(self):
+        
+        self.newFilename = self.newFilename.casefold()
+        
+        germanUmlaute = [("ä", "ae"),
+                         ("ö", "oe"),
+                         ("ü", "ue"),
+                         ]
+        
+        for pair in germanUmlaute:
+            self.newFilename = self.newFilename.replace(pair[0], pair[1])
         
         replacementTable = [("-\n",""),
                             ("\n"," "),
@@ -278,8 +268,6 @@ class Pubrename(QMainWindow):
         for pair in replacementTable:
             self.newFilename = self.newFilename.replace(pair[0], pair[1])
         
-        self.newFilename = self.newFilename.casefold()
-        
         self.newFilename = unidecode.unidecode(self.newFilename)
     
     def _moveTo2edit(self):
@@ -289,20 +277,20 @@ class Pubrename(QMainWindow):
             
         os.rename(self.file, self.directory+"/2edit/"+self.oldFilename)
         
-        self._clearFields()
+        self._clearAllFields()
         
         self._closeEvince()
     
     def _submit(self):
         
-        self.newFilename = self.filenameWidgets["newFilename"][1].text()
+        self.newFilename = self.filenameBox.formList["newFilename"][1].text()
         
         if os.path.isdir(self.directory+"/renamed") == False:
             os.mkdir(self.directory+"/renamed")
         
         os.rename(self.file, self.directory+"/renamed/"+self.newFilename)
         
-        self._clearFields()
+        self._clearAllFields()
         
         self._closeEvince()
         
@@ -311,8 +299,51 @@ class Pubrename(QMainWindow):
         self._submit()
         
         self._openRandomFile()
-   
+        
+class formBox(QWidget):
+    
+    def __init__(self, boxName, formList):
+        super().__init__()
+        
+        self.layout = QVBoxLayout()
+        
+        box = QGroupBox(boxName)
+        boxLayout = QVBoxLayout()
+        box.setLayout(boxLayout)
+        
+        self.formList = {}
+        
+        for name, description in formList.items():
+            self.formList[name] = [QLabel(description+": "), QLineEdit()]
+            boxLayout.addWidget(self.formList[name][0])
+            boxLayout.addWidget(self.formList[name][1])
+        
+        self.layout.addWidget(box)
+    
+    def clearFields(self):
+        
+        for widget, elements in self.formList.items():
+            elements[1].clear()
 
+class buttonBox(QWidget):
+    def __init__(self, buttonList):
+        super().__init__()
+        
+        self.layout = QVBoxLayout()
+        
+        box = QWidget()
+        boxLayout = QGridLayout()
+        box.setLayout(boxLayout)
+        
+        self.buttonList = {}
+            
+        for button, attributes in buttonList.items():
+            self.buttonList[button] = QPushButton(attributes[0])
+            self.buttonList[button].clicked.connect(attributes[1])
+            boxLayout.addWidget(self.buttonList[button], attributes[2][0], attributes[2][1])
+        
+        self.layout.addWidget(box)
+        
 def main():    
     pubrename = QApplication(sys.argv)
     view = Pubrename()
