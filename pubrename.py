@@ -13,7 +13,11 @@ Created on Thu Jul  1 18:24:03 2021
 #         - handling for files other than pdf
 #     - oo to the max: gui-elements as objects
 #     - check for bugs...
-#     - improve normalizing of filenames
+#     - implement internal pdf display
+#     - write about modal window
+#     - close file when opening concrete file or next random file without submitting
+#     - improve normalization of filename
+#     - take care of dot when normalizing old filename
 
 # -*- coding: utf-8 -*-
 """
@@ -129,7 +133,7 @@ class Pubrename(QMainWindow):
         
     def _createFormBoxes(self):
               
-        self.bibWidgets = {"author": "Autor",
+        self.bibWidgets = {"author": "Autor/Hrsg.",
                       "year" : "Jahr",
                       "title" : "Titel",
                       "subtitle": "Untertitel (optional)",
@@ -230,9 +234,11 @@ class Pubrename(QMainWindow):
         if not addition == "":
             addition = "_" + addition
         
-        self.newFilename = author + year + title + subtitle + addition + ".pdf"
+        self.newFilename = author + year + title + subtitle + addition
     
         self.normalizeFilename()
+        
+        self.newFilename = self.newFilename + ".pdf"
         
         self.filenameBox.formList["newFilename"][1].setText(self.newFilename)
         
@@ -256,15 +262,35 @@ class Pubrename(QMainWindow):
         for pair in germanUmlaute:
             self.newFilename = self.newFilename.replace(pair[0], pair[1])
         
-        replacementTable = [("-\n",""),
-                            ("\n"," "),
-                            (":"," "),
-                            ("  "," "),
-                            (" ","-"),
+        deletionTable = ['"',
+                         "“",
+                         "”",
+                         "„",
+                         "«",
+                         "»",
+                         "‹",
+                         "›",
+                         ",",
+                         ".",
+                         "?",
+                         ":",
+                         ";",
+                         "!",
+                         "-\n",
+                        ]
+        
+        for element in deletionTable:
+            self.newFilename = self.newFilename.replace(element, "")
+        
+        replacementTable = [("\n"," "),
+                            ("‘","'"),
+                            ("’","'"),
                             ("'","-"),
-                            (",",""),
-                            ("\"",""),
+                            ("--","-"),
+                            ("  "," "),
+                            (" ","-")
                             ]
+        
         for pair in replacementTable:
             self.newFilename = self.newFilename.replace(pair[0], pair[1])
         
