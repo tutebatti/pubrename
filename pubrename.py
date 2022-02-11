@@ -9,7 +9,6 @@
 #     - handling for files other than pdf
 #     - check for bugs...
 #     - implement internal pdf display
-#     - close evince when opening concrete file or next random file without submitting
 #     - take care of dot when normalizing old filename
 
 import time  # for delay when opening evince
@@ -51,6 +50,13 @@ class Pubrename(QMainWindow):
         self.fileExtension = ""
         self.oldFilename = ""
         self.newFilename = ""
+
+        # variable to check if evince is running
+        self.evinceRunning = False
+
+    def closeOldEvince(self):
+        if self.evinceRunning:
+            self.closeEvince()
 
     def createMenuBar(self):
 
@@ -132,15 +138,19 @@ class Pubrename(QMainWindow):
 
     def openIndividualFile(self):
 
+        self.closeOldEvince()
+
         self.file = QFileDialog.getOpenFileName()[0]
 
         self.showFileTypeError()
 
-        self.directory = os.path.dirname(self.file)
+        self.directory = os.path.dirname(self.file) + "/"
 
         self.openFile()
 
     def openRandomFile(self):
+
+        self.closeOldEvince()
 
         if self.directory == "":
             noDirectoryError = QMessageBox()
@@ -180,6 +190,8 @@ class Pubrename(QMainWindow):
         time.sleep(0.1)
         subprocess.Popen(["xdotool", "keyup", "Alt"])
 
+        self.evinceRunning = True
+
     def closeEvince(self):
 
         self.evincePreview.terminate()
@@ -194,27 +206,21 @@ class Pubrename(QMainWindow):
         title = self.bibBox.formList["title"][1].text()
 
         subtitle = self.bibBox.formList["subtitle"][1].text()
-
         if not subtitle == "":
             subtitle = "_" + subtitle
 
         addition = self.bibBox.formList["addition"][1].text()
-
         if not addition == "":
             addition = "_" + addition
 
         self.newFilename = author + year + title + subtitle + addition
-
         self.newFilename = normpfn(self.newFilename)
-
         self.newFilename = self.newFilename + self.fileExtension
-
         self.filenameBox.formList["newFilename"][1].setText(self.newFilename)
 
     def normalizeOldFilename(self):
 
         self.newFilename = normpfn(self.oldFilename)
-
         self.filenameBox.formList["newFilename"][1].setText(self.newFilename)
 
     def moveTo2edit(self):
@@ -225,7 +231,6 @@ class Pubrename(QMainWindow):
         os.rename(self.file, self.directory + "/2edit/" + self.oldFilename)
 
         self.clearAllFields()
-
         self.closeEvince()
 
     def submit(self):
@@ -238,14 +243,14 @@ class Pubrename(QMainWindow):
         os.rename(self.file, self.directory + "/renamed/" + self.newFilename)
 
         self.clearAllFields()
-
         self.closeEvince()
 
     def submitAndOpenRandomFile(self):
 
         self.submit()
-
         self.openRandomFile()
+
+    # from here on: methods creating gui
 
     def createBoxes(self):
 
