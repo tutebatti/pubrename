@@ -4,6 +4,8 @@
 Created on Sat Jan 22 19:27:46 2022
 
 @author: florian
+
+2do: double spaces are not removed
 """
 
 import os
@@ -31,7 +33,7 @@ def normalize_pubfilename(original_filename):
                      "‹",
                      "›",
                      ",",
-                     #".",
+                     ".",
                      "?",
                      ":",
                      ";",
@@ -42,6 +44,8 @@ def normalize_pubfilename(original_filename):
     for element in deletionTable:
         normalized_filename = normalized_filename.replace(element, "")
     
+    normalized_filename = unidecode.unidecode(normalized_filename)
+
     replacementTable = [("\n"," "),
                         ("-et-al","+al"),
                         ("‘","'"),
@@ -54,8 +58,6 @@ def normalize_pubfilename(original_filename):
     
     for pair in replacementTable:
         normalized_filename = normalized_filename.replace(pair[0], pair[1])
-    
-    normalized_filename = unidecode.unidecode(normalized_filename)
     
     return normalized_filename
 
