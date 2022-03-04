@@ -5,11 +5,11 @@
 """
 
 # 2do:
-#     - error handling
+#     - improve error handling
+#     - add button to move file to trash
 #     - handling for files other than pdf
 #     - check for bugs...
 #     - implement internal pdf display
-#     - take care of dot when normalizing old filename
 
 import time  # for delay when opening evince
 import subprocess  # for starting and closing evince
@@ -28,7 +28,7 @@ class Pubrename(QMainWindow):
 
         # set window properties
         self.setWindowTitle("Pubrename")
-        self.setGeometry(50, 500, 960, 500)
+        self.setGeometry(50, 500, 960, 500) # adapt to be flexible for any resolution
         self.move(0, 0)
 
         # set general layout and central widget
@@ -41,22 +41,183 @@ class Pubrename(QMainWindow):
         self.createStatusBar()
         self.createBoxes()
 
-        # default directory to operate in
-        # 2do: implement warning when empty
-        self.directory = ""
-
-        # variables for handling of file
-        self.file = ""
-        self.fileExtension = ""
-        self.oldFilename = ""
-        self.newFilename = ""
-
         # variable to check if evince is running
         self.evinceRunning = False
+
+    def closeEvent(self, event):
+        self.closeEvince()
+
+    def clearAllFields(self):
+        self.bibBox.clearFields()
+        self.filenameBox.clearFields()
+
+    ### handle old file
+
+    def setDirectory(self):
+        self.directory = QFileDialog.getExistingDirectory() + "/"
+        self.updateStatusBar(self.directory)
+
+    def createFileVariables(self):
+
+        self.baseName = os.path.basename(self.fullFilename)
+        self.oldFilename, self.fileExtension = os.path.splitext(self.baseName)
+
+    def checkFiletype(self):
+
+        self.createFileVariables()
+
+        acceptedFiletypes = [".pdf"]
+
+        if (self.fileExtension in acceptedFiletypes):
+            return True
+        else:
+            return False
+
+    def showFileTypeError(self):
+
+        wrongFiletype = QMessageBox()
+        wrongFiletype.setWindowTitle("Fehler")
+        wrongFiletype.setText("Keine pdf-Datei!")
+        wrongFiletype.setIcon(QMessageBox.Warning)
+        wrongFiletype.setStandardButtons(QMessageBox.Ok)
+        wrongFiletype.exec_()
+        self.fullFilename = QFileDialog.getOpenFileName()[0]
+
+    def openFile(self):
+
+        self.filenameBox.formList["oldFilename"][1].setText(self.oldFilename + self.fileExtension)
+        self.openEvince()
+
+    def openIndividualFile(self):
+
+        self.closeOldEvince()
+
+        self.fullFilename = QFileDialog.getOpenFileName()[0]
+
+        while self.checkFiletype() == False:
+            self.showFileTypeError()
+
+        self.directory = os.path.dirname(self.fullFilename) + "/"
+
+        self.openFile()
+
+    def openRandomFile(self):
+
+        self.closeOldEvince()
+
+        if self.directory == "":
+            noDirectoryError = QMessageBox()
+            noDirectoryError.setWindowTitle("Fehler")
+            noDirectoryError.setText("Es wurde noch kein Verzeichnis ausgewählt.")
+            noDirectoryError.setIcon(QMessageBox.Warning)
+            noDirectoryError.setStandardButtons(QMessageBox.Ok)
+            noDirectoryError.exec_()
+            self.setDirectory()
+
+        self.fullFilename = self.directory + random.choice(os.listdir(self.directory))
+
+        while self.checkFiletype() == False:
+            self.fullFilename = self.directory + random.choice(os.listdir(self.directory))
+
+        self.openFile()
+
+    ### handling of evince-preview
+
+    def openEvince(self):
+
+        self.evincePreview = subprocess.Popen(["evince", self.fullFilename])  # , preexec_fn=os.setsid)
+        time.sleep(0.75)
+        subprocess.Popen(["xdotool", "keydown", "Super"]),
+        time.sleep(0.1)
+        subprocess.Popen(["xdotool", "key", "Right"])
+        time.sleep(0.1)
+        subprocess.Popen(["xdotool", "keyup", "Super"]),
+        #time.sleep(0.1)
+        #subprocess.Popen(["xdotool", "key", "F9"])
+        #time.sleep(0.2)
+        #subprocess.Popen(["xdotool", "key", "Alt+Tab"])
+        #subprocess.Popen(["xdotool", "keydown", "Alt", "key", "Tab"])
+        #time.sleep(0.2)
+        #subprocess.Popen(["xdotool", "keyup", "Alt"])
+
+        self.evinceRunning = True
+
+    def closeEvince(self):
+
+        self.evincePreview.terminate()
 
     def closeOldEvince(self):
         if self.evinceRunning:
             self.closeEvince()
+
+    ### handling of newFilename
+
+    def preview(self):
+        author = self.bibBox.formList["author"][1].text()
+        author = author + "_"
+
+        year = self.bibBox.formList["year"][1].text()
+        year = year + "_"
+
+        title = self.bibBox.formList["title"][1].text()
+
+        subtitle = self.bibBox.formList["subtitle"][1].text()
+        if not subtitle == "":
+            subtitle = "_" + subtitle
+
+        addition = self.bibBox.formList["addition"][1].text()
+        if not addition == "":
+            addition = "_" + addition
+
+        self.newFilename = author + year + title + subtitle + addition
+        self.newFilename = normpfn(self.newFilename)
+
+        if "\n" in self.newFilename:
+            lineBreakinFilename = QMessageBox()
+            noDirectoryError.setWindowTitle("Fehler")
+            noDirectoryError.setText("Es ist ein Zeilenumbruch vorhanden.")
+            noDirectoryError.setIcon(QMessageBox.Warning)
+            noDirectoryError.setStandardButtons(QMessageBox.Ok)
+            noDirectoryError.exec_()
+
+        self.newFilename = self.newFilename + self.fileExtension
+        self.filenameBox.formList["newFilename"][1].setText(self.newFilename)
+
+    def normalizeOldFilename(self):
+
+        self.newFilename = normpfn(self.oldFilename)
+        self.filenameBox.formList["newFilename"][1].setText(self.newFilename + self.fileExtension)
+
+    ### moving and renaming file
+
+    def moveTo2edit(self):
+
+        if os.path.isdir(self.directory + "2edit") == False:
+            os.mkdir(self.directory + "2edit")
+
+        os.rename(self.fullFilename, self.directory + "2edit/" + self.oldFilename + self.fileExtension)
+
+        self.clearAllFields()
+        self.closeEvince()
+
+    def submit(self):
+
+        self.newFilename = self.filenameBox.formList["newFilename"][1].text()
+
+        if os.path.isdir(self.directory + "renamed") == False:
+            os.mkdir(self.directory + "renamed")
+
+        os.rename(self.fullFilename, self.directory + "renamed/" + self.newFilename)
+
+        self.clearAllFields()
+        self.closeEvince()
+
+    def submitAndOpenRandomFile(self):
+
+        self.submit()
+        self.openRandomFile()
+
+    ### methods creating gui
 
     def createMenuBar(self):
 
@@ -95,162 +256,9 @@ class Pubrename(QMainWindow):
         self.statusBarLabel = QLabel()
         statusBar.addWidget(self.statusBarLabel)
 
-    def updateStatusBar(self, directory, filename):
+    def updateStatusBar(self, directory):
 
-        self.statusBarLabel.setText("Aktuelles Verzeichnis: " + directory)  #+ "\n\nAktuelle Datei: " + filename)
-        #self.statusBar().setMinimumWidth(960)
-        #self.statusBar().setMaximumWidth(960)
-
-    def closeEvent(self, event):
-
-        self.closeEvince()
-
-    def clearAllFields(self):
-
-        self.bibBox.clearFields()
-        self.filenameBox.clearFields()
-
-    def setDirectory(self):
-
-        self.directory = QFileDialog.getExistingDirectory() + "/"
-        self.updateStatusBar(self.directory, "")
-
-    def checkFiletype(self):
-
-        acceptedFiletypes = [".pdf"]
-        self.filename, self.fileExtension = os.path.splitext(self.file)
-
-        if (self.fileExtension in acceptedFiletypes):
-            return True
-        else:
-            return False
-
-    def showFileTypeError(self):
-
-        while self.checkFiletype() == False:
-            wrongFiletype = QMessageBox()
-            wrongFiletype.setWindowTitle("Fehler")
-            wrongFiletype.setText("Keine pdf-Datei!")
-            wrongFiletype.setIcon(QMessageBox.Warning)
-            wrongFiletype.setStandardButtons(QMessageBox.Ok)
-            wrongFiletype.exec_()
-            self.file = QFileDialog.getOpenFileName()[0]
-
-    def openIndividualFile(self):
-
-        self.closeOldEvince()
-
-        self.file = QFileDialog.getOpenFileName()[0]
-
-        self.showFileTypeError()
-
-        self.directory = os.path.dirname(self.file) + "/"
-
-        self.openFile()
-
-    def openRandomFile(self):
-
-        self.closeOldEvince()
-
-        if self.directory == "":
-            noDirectoryError = QMessageBox()
-            noDirectoryError.setWindowTitle("Fehler")
-            noDirectoryError.setText("Es wurde noch kein Verzeichnis ausgewählt.")
-            noDirectoryError.setIcon(QMessageBox.Warning)
-            noDirectoryError.setStandardButtons(QMessageBox.Ok)
-            noDirectoryError.exec_()
-            self.setDirectory()
-
-        self.file = self.directory + random.choice(os.listdir(self.directory))
-
-        while self.checkFiletype() == False:
-            self.file = self.directory + random.choice(os.listdir(self.directory))
-
-        self.openFile()
-
-    def openFile(self):
-
-        self.oldFilename = os.path.basename(self.file)
-
-        self.filenameBox.formList["oldFilename"][1].setText(self.oldFilename)
-
-        self.updateStatusBar(self.directory, self.oldFilename)
-
-        self.openEvince()
-
-    def openEvince(self):
-
-        self.evincePreview = subprocess.Popen(["evince", self.file])  # , preexec_fn=os.setsid)
-        time.sleep(0.75)
-        subprocess.Popen(["xdotool", "key", "Super+Right"])
-        time.sleep(0.1)
-        subprocess.Popen(["xdotool", "key", "F9"])
-        time.sleep(0.1)
-        subprocess.Popen(["xdotool", "keydown", "Alt", "key", "Tab"])
-        time.sleep(0.1)
-        subprocess.Popen(["xdotool", "keyup", "Alt"])
-
-        self.evinceRunning = True
-
-    def closeEvince(self):
-
-        self.evincePreview.terminate()
-
-    def preview(self):
-        author = self.bibBox.formList["author"][1].text()
-        author = author + "_"
-
-        year = self.bibBox.formList["year"][1].text()
-        year = year + "_"
-
-        title = self.bibBox.formList["title"][1].text()
-
-        subtitle = self.bibBox.formList["subtitle"][1].text()
-        if not subtitle == "":
-            subtitle = "_" + subtitle
-
-        addition = self.bibBox.formList["addition"][1].text()
-        if not addition == "":
-            addition = "_" + addition
-
-        self.newFilename = author + year + title + subtitle + addition
-        self.newFilename = normpfn(self.newFilename)
-        self.newFilename = self.newFilename + self.fileExtension
-        self.filenameBox.formList["newFilename"][1].setText(self.newFilename)
-
-    def normalizeOldFilename(self):
-
-        self.newFilename = normpfn(self.oldFilename)
-        self.filenameBox.formList["newFilename"][1].setText(self.newFilename)
-
-    def moveTo2edit(self):
-
-        if os.path.isdir(self.directory + "/2edit") == False:
-            os.mkdir(self.directory + "/2edit")
-
-        os.rename(self.file, self.directory + "/2edit/" + self.oldFilename)
-
-        self.clearAllFields()
-        self.closeEvince()
-
-    def submit(self):
-
-        self.newFilename = self.filenameBox.formList["newFilename"][1].text()
-
-        if os.path.isdir(self.directory + "/renamed") == False:
-            os.mkdir(self.directory + "/renamed")
-
-        os.rename(self.file, self.directory + "/renamed/" + self.newFilename)
-
-        self.clearAllFields()
-        self.closeEvince()
-
-    def submitAndOpenRandomFile(self):
-
-        self.submit()
-        self.openRandomFile()
-
-    # from here on: methods creating gui
+        self.statusBarLabel.setText("Aktuelles Verzeichnis: " + directory)
 
     def createBoxes(self):
 
