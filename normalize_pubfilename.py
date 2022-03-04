@@ -39,6 +39,7 @@ def normalize_pubfilename(original_filename):
                      ";",
                      "!",
                      "-\n",
+                     "-\r",
                     ]
     
     for element in deletionTable:
@@ -47,6 +48,7 @@ def normalize_pubfilename(original_filename):
     normalized_filename = unidecode.unidecode(normalized_filename)
 
     replacementTable = [("\n"," "),
+                        ("\r"," "),
                         ("-et-al","+al"),
                         ("‘","'"),
                         ("’","'"),
