@@ -63,6 +63,15 @@ def normalize_pubfilename(original_filename):
     
     return normalized_filename
 
+def evaluate_string(string):
+
+    elements = ["  ","\n","\r"]
+
+    if any elements in string:
+        print("not clean")
+    else:
+        print("clean")
+
 def main():
 
     original_filename, file_extension = os.path.splitext(sys.argv[1])
