@@ -59,7 +59,7 @@ class Pubrename(QMainWindow):
 
     def createFileVariables(self):
 
-        self.baseName = os.path.basename(self.fullFilename)
+        self.baseName = os.path.basename(self.fullPath)
         self.oldFilename, self.fileExtension = os.path.splitext(self.baseName)
 
     def checkFiletype(self):
@@ -81,7 +81,7 @@ class Pubrename(QMainWindow):
         wrongFiletype.setIcon(QMessageBox.Warning)
         wrongFiletype.setStandardButtons(QMessageBox.Ok)
         wrongFiletype.exec_()
-        self.fullFilename = QFileDialog.getOpenFileName()[0]
+        self.fullPath = QFileDialog.getOpenFileName()[0]
 
     def openFile(self):
 
@@ -92,12 +92,12 @@ class Pubrename(QMainWindow):
 
         self.closeOldEvince()
 
-        self.fullFilename = QFileDialog.getOpenFileName()[0]
+        self.fullPath = QFileDialog.getOpenFileName()[0]
 
         while self.checkFiletype() == False:
             self.showFileTypeError()
 
-        self.directory = os.path.dirname(self.fullFilename) + "/"
+        self.directory = os.path.dirname(self.fullPath) + "/"
 
         self.openFile()
 
@@ -114,10 +114,10 @@ class Pubrename(QMainWindow):
             noDirectoryError.exec_()
             self.setDirectory()
 
-        self.fullFilename = self.directory + random.choice(os.listdir(self.directory))
+        self.fullPath = self.directory + random.choice(os.listdir(self.directory))
 
         while self.checkFiletype() == False:
-            self.fullFilename = self.directory + random.choice(os.listdir(self.directory))
+            self.fullPath = self.directory + random.choice(os.listdir(self.directory))
 
         self.openFile()
 
@@ -125,7 +125,7 @@ class Pubrename(QMainWindow):
 
     def openEvince(self):
 
-        self.evincePreview = subprocess.Popen(["evince", self.fullFilename])  # , preexec_fn=os.setsid)
+        self.evincePreview = subprocess.Popen(["evince", self.fullPath])  # , preexec_fn=os.setsid)
         time.sleep(0.75)
         subprocess.Popen(["xdotool", "keydown", "Super"]),
         time.sleep(0.1)
@@ -172,14 +172,6 @@ class Pubrename(QMainWindow):
         self.newFilename = author + year + title + subtitle + addition
         self.newFilename = normpfn(self.newFilename)
 
-        if "\n" in self.newFilename:
-            lineBreakinFilename = QMessageBox()
-            noDirectoryError.setWindowTitle("Fehler")
-            noDirectoryError.setText("Es ist ein Zeilenumbruch vorhanden.")
-            noDirectoryError.setIcon(QMessageBox.Warning)
-            noDirectoryError.setStandardButtons(QMessageBox.Ok)
-            noDirectoryError.exec_()
-
         self.newFilename = self.newFilename + self.fileExtension
         self.filenameBox.formList["newFilename"][1].setText(self.newFilename)
 
@@ -195,7 +187,7 @@ class Pubrename(QMainWindow):
         if os.path.isdir(self.directory + "2edit") == False:
             os.mkdir(self.directory + "2edit")
 
-        os.rename(self.fullFilename, self.directory + "2edit/" + self.oldFilename + self.fileExtension)
+        os.rename(self.fullPath, self.directory + "2edit/" + self.oldFilename + self.fileExtension)
 
         self.clearAllFields()
         self.closeEvince()
@@ -207,7 +199,7 @@ class Pubrename(QMainWindow):
         if os.path.isdir(self.directory + "renamed") == False:
             os.mkdir(self.directory + "renamed")
 
-        os.rename(self.fullFilename, self.directory + "renamed/" + self.newFilename)
+        os.rename(self.fullPath, self.directory + "renamed/" + self.newFilename)
 
         self.clearAllFields()
         self.closeEvince()
