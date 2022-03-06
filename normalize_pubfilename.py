@@ -67,7 +67,7 @@ def evaluate_string(string):
 
     elements = ["  ","\n","\r"]
 
-    if any elements in string:
+    if any (element in elements for substring in string):
         print("not clean")
     else:
         print("clean")
