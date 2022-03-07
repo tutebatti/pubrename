@@ -6,7 +6,6 @@
 
 # 2do:
 #     - improve error handling
-#     - add button to move file to trash
 #     - handling for files other than pdf
 #     - check for bugs...
 #     - implement internal pdf display
@@ -192,6 +191,16 @@ class Pubrename(QMainWindow):
         self.clearAllFields()
         self.closeEvince()
 
+    def moveToTrash(self):
+
+        if os.path.isdir(self.directory + "deleted") == False:
+            os.mkdir(self.directory + "deleted")
+
+        os.rename(self.fullPath, self.directory + "deleted/" + self.oldFilename + self.fileExtension)
+
+        self.clearAllFields()
+        self.closeEvince()
+
     def submit(self):
 
         self.newFilename = self.filenameBox.formList["newFilename"][1].text()
@@ -267,9 +276,11 @@ class Pubrename(QMainWindow):
         self.fileButtons = {
             "submit": ["&Übernehmen", self.submit, (0, 0)],
             "submitAndOpenRandomFile": ["Übernehmen und &nächste zufällige Datei", self.submitAndOpenRandomFile,
-                                        (1, 0)],
-            "openRandomFile": ["Nächste zufällige Datei", self.openRandomFile, (0, 1)],
-            "moveTo2edit": ["Verschiebe Datei nach &2edit", self.moveTo2edit, (1, 1)],
+                                        (0, 1)],
+            "openRandomFile": ["Nächste zufällige Datei", self.openRandomFile, (1, 0)],
+            "moveTo2edit": ["Verschiebe Datei nach &2edit", self.moveTo2edit, (2, 0)],
+
+            "moveToTrash": ["Verschiebe Datei nach &deleted", self.moveToTrash, (2, 1)],
         }
 
         self.filenameButtonBox = buttonBox(self.filenameButtons)
